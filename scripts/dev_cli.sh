@@ -413,6 +413,7 @@ cmd_tests() {
             --volume "$CLH_INTEGRATION_WORKLOADS:$CTR_CLH_INTEGRATION_WORKLOADS" \
             --env USER="root" \
             --env CH_LIBC="${libc}" \
+	    --ulimit nofile=65535:65535 \
             "$CTR_IMAGE" \
             ./scripts/run_integration_tests_"$(uname -m)".sh "$@" || fix_dir_perms $? || exit $?
     fi
