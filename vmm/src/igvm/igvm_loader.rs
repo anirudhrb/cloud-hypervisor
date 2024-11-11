@@ -216,6 +216,41 @@ pub fn load_igvm(
                             let cpuid_page_p: *mut hv_psp_cpuid_page =
                                 data.as_ptr() as *mut hv_psp_cpuid_page; // as *mut hv_psp_cpuid_page;
                             let cpuid_page: &mut hv_psp_cpuid_page = &mut *cpuid_page_p;
+                            let ext_subleaf0 = cpu_manager
+                                .lock()
+                                .unwrap()
+                                .get_cpuid_leaf(0, 0xd, 0x0, 0x3, 0x0)
+                                .unwrap();
+                            let ext_subleaf1 = cpu_manager
+                                .lock()
+                                .unwrap()
+                                .get_cpuid_leaf(0, 0xd, 0x1, 0x3, 0x0)
+                                .unwrap();
+                            let mut supported_features_mask = ext_subleaf0[0] as u64
+                                | ((ext_subleaf0[3] as u64) << 32)
+                                | ext_subleaf1[2] as u64
+                                | ((ext_subleaf1[3] as u64) << 32);
+
+                            // skip subleaves 0x0 and 0x1; they are included in the IGVM file
+                            supported_features_mask &= !0x3u64;
+
+                            for feature in 0..u64::BITS {
+                                if supported_features_mask & (1 << feature) != 0 {
+                                    assert!(cpuid_page.count < HV_PSP_CPUID_LEAF_COUNT_MAX);
+
+                                    cpuid_page.cpuid_leaf_info[cpuid_page.count as usize].eax_in =
+                                        0xd;
+                                    cpuid_page.cpuid_leaf_info[cpuid_page.count as usize].ecx_in =
+                                        feature;
+                                    cpuid_page.cpuid_leaf_info[cpuid_page.count as usize].xfem_in =
+                                        3;
+                                    cpuid_page.cpuid_leaf_info[cpuid_page.count as usize].xss_in =
+                                        0;
+
+                                    cpuid_page.count += 1;
+                                }
+                            }
+
                             for i in 0..cpuid_page.count {
                                 let leaf = cpuid_page.cpuid_leaf_info[i as usize];
                                 let mut in_leaf = cpu_manager
