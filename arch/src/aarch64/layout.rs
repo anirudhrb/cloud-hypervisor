@@ -95,8 +95,6 @@ pub const PCI_MMIO_CONFIG_SIZE_PER_SEGMENT: u64 = 4096 * 256;
 pub const RAM_START: GuestAddress = GuestAddress(0x4000_0000);
 
 /// 32-bit reserved area: 64MiB before 4GiB
-// pub const MEM_32BIT_RESERVED_START: GuestAddress = GuestAddress(0xeff6_8000); // hv legacy gits translater base addr
-// pub const MEM_32BIT_RESERVED_SIZE: u64 = 0x0400_0000 + HV_LEGACY_GICR_SIZE + 0x86000; // add gicr size + space between gits & gicr
 pub const MEM_32BIT_RESERVED_START: GuestAddress = GuestAddress(0xfc00_0000);
 pub const MEM_32BIT_RESERVED_SIZE: u64 = 0x0400_0000;
 

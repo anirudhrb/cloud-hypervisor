@@ -136,9 +136,14 @@ update_workloads() {
     FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR="$WORKLOADS_DIR/focal-server-cloudimg-root"
     mkdir -p "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
     # Mount the 'raw' image, replace the compressed kernel file and umount the working folder
-    guestmount -a "$WORKLOADS_DIR/$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_NAME" -m /dev/sda1 "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR" || exit 1
+    # guestmount -a "$WORKLOADS_DIR/$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_NAME" -m /dev/sda1 "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR" || exit 1
+    SECTOR_SIZE=$(fdisk -l "$IMG" | awk '/Sector size/ {print $4; exit}')
+    START_SECTOR=$(fdisk -l "$IMG" | awk '$0 ~ /^'"$IMG"'1/ {print $2; exit}')
+    OFFSET=$((START_SECTOR * SECTOR_SIZE))
+    sudo mount -o loop,offset="$OFFSET" "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_NAME" "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
     cp "$WORKLOADS_DIR"/Image-arm64.gz "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"/boot/vmlinuz
-    guestunmount "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
+    # guestunmount "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
+    sudo umount "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
 
     # Build virtiofsd
     build_virtiofsd
@@ -170,11 +175,11 @@ update_workloads() {
 
 process_common_args "$@"
 
-# aarch64 not supported for MSHV
-if [[ "$hypervisor" = "mshv" ]]; then
-    echo "AArch64 is not supported in Microsoft Hypervisor"
-    exit 1
-fi
+# # aarch64 not supported for MSHV
+# if [[ "$hypervisor" = "mshv" ]]; then
+#     echo "AArch64 is not supported in Microsoft Hypervisor"
+#     exit 1
+# fi
 
 # lock the workloads folder to avoid parallel updating by different containers
 (
@@ -192,7 +197,7 @@ fi
 
 export RUST_BACKTRACE=1
 
-cargo build --all --release --target "$BUILD_TARGET"
+cargo build --features mshv --all --release --target "$BUILD_TARGET"
 
 # Enable KSM with some reasonable parameters so that it won't take too long
 # for the memory to be merged between two processes.
