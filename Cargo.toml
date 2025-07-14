@@ -132,3 +132,9 @@ serde_json = "1.0.120"
 thiserror = "2.0.12"
 uuid = { version = "1.17.0" }
 zerocopy = { version = "0.8.26", default-features = false }
+
+[patch.crates-io]
+mshv-bindings = { git = "https://github.com/anirudhrb/rust-vmm-mshv", branch = "arm64" }
+mshv-ioctls = { git = "https://github.com/anirudhrb/rust-vmm-mshv", branch = "arm64" }
+# mshv-bindings = { path = "/home/anirudh/rust-vmm-mshv/mshv-bindings" }
+# mshv-ioctls = { path = "/home/anirudh/rust-vmm-mshv/mshv-ioctls" }
