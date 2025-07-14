@@ -42,6 +42,7 @@ impl Gic {
         vcpu_count: u8,
         interrupt_manager: Arc<dyn InterruptManager<GroupConfig = MsiIrqGroupConfig>>,
         vm: Arc<dyn hypervisor::Vm>,
+        hypervisor: Arc<dyn hypervisor::Hypervisor>,
     ) -> Result<Gic> {
         let interrupt_source_group = interrupt_manager
             .create_group(MsiIrqGroupConfig {
@@ -51,7 +52,7 @@ impl Gic {
             .map_err(Error::CreateInterruptSourceGroup)?;
 
         let vgic = vm
-            .create_vgic(Gic::create_default_config(vcpu_count as u64))
+            .create_vgic(Gic::create_vgic_config(vcpu_count as u64, hypervisor))
             .map_err(Error::CreateGic)?;
 
         let gic = Gic {
@@ -121,6 +122,27 @@ impl Gic {
             msi_addr: redists_addr - layout::GIC_V3_ITS_SIZE,
             msi_size: layout::GIC_V3_ITS_SIZE,
             nr_irqs: layout::IRQ_NUM,
+        }
+    }
+
+    pub fn create_vgic_config(vcpu_count: u64, hypervisor: Arc<dyn hypervisor::Hypervisor>) -> VgicConfig {
+        if hypervisor.vgic_addr_configuration_supported() {
+            Gic::create_default_config(vcpu_count)
+        } else {
+            // assert!(matches!(hypervisor.hypervisor_type(), hypervisor::HypervisorType::Mshv));
+            // Some versions of MSHV don't support custom GIC addresses. So, use the
+            // GIC addresses defined by the hypervisor.
+            let redists_size = layout::GIC_V3_REDIST_SIZE * vcpu_count;
+            VgicConfig {
+                vcpu_count,
+                dist_addr: layout::HV_LEGACY_GICD_START.raw_value(),
+                dist_size: layout::GIC_V3_DIST_SIZE,
+                redists_addr: layout::HV_LEGACY_GICR_START.raw_value(),
+                redists_size,
+                msi_addr: layout::HV_LEGACY_GIC_MSI_ADDR.raw_value(),
+                msi_size: layout::GIC_V3_ITS_SIZE,
+                nr_irqs: layout::IRQ_NUM,
+            }
         }
     }
 

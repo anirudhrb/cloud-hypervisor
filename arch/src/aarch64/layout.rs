@@ -95,8 +95,18 @@ pub const PCI_MMIO_CONFIG_SIZE_PER_SEGMENT: u64 = 4096 * 256;
 pub const RAM_START: GuestAddress = GuestAddress(0x4000_0000);
 
 /// 32-bit reserved area: 64MiB before 4GiB
+// pub const MEM_32BIT_RESERVED_START: GuestAddress = GuestAddress(0xeff6_8000); // hv legacy gits translater base addr
+// pub const MEM_32BIT_RESERVED_SIZE: u64 = 0x0400_0000 + HV_LEGACY_GICR_SIZE + 0x86000; // add gicr size + space between gits & gicr
 pub const MEM_32BIT_RESERVED_START: GuestAddress = GuestAddress(0xfc00_0000);
 pub const MEM_32BIT_RESERVED_SIZE: u64 = 0x0400_0000;
+
+/// Hyper-V legacy GIC region. This will be used when the hypervisor
+/// does not support setting custom GIC addresses.
+pub const HV_LEGACY_GIC_MSI_ADDR: GuestAddress = GuestAddress(0xeff6_8000);
+pub const HV_LEGACY_GICR_START: GuestAddress = GuestAddress(0xeffe_e000);
+pub const HV_LEGACY_GICD_START: GuestAddress = GuestAddress(0xffff_0000);
+pub const HV_LEGACY_GIC_REGION_START: GuestAddress = HV_LEGACY_GIC_MSI_ADDR;
+pub const HV_LEGACY_GIC_REGION_SIZE: u64 = MEM_32BIT_RESERVED_START.0 - HV_LEGACY_GIC_MSI_ADDR.0;
 
 /// TPM Address Range
 /// This Address range is specific to CRB Interface

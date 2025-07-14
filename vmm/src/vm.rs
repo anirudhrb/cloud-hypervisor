@@ -631,7 +631,7 @@ impl Vm {
                 let ic = device_manager
                     .lock()
                     .unwrap()
-                    .create_interrupt_controller()
+                    .create_interrupt_controller(hypervisor.clone())
                     .map_err(Error::DeviceManager)?;
 
                 vm.init().map_err(Error::InitializeVm)?;
@@ -695,7 +695,7 @@ impl Vm {
                 let ic = device_manager
                     .lock()
                     .unwrap()
-                    .create_interrupt_controller()
+                    .create_interrupt_controller(hypervisor.clone())
                     .map_err(Error::DeviceManager)?;
 
                 vm.init().map_err(Error::InitializeVm)?;

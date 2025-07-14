@@ -62,6 +62,8 @@ use devices::pvmemcontrol::{PvmemcontrolBusDevice, PvmemcontrolPciDevice};
 use devices::{interrupt_controller, AcpiNotificationFlags};
 #[cfg(target_arch = "aarch64")]
 use hypervisor::arch::aarch64::regs::AARCH64_PMU_IRQ;
+#[cfg(target_arch = "aarch64")]
+use hypervisor::Hypervisor;
 use hypervisor::IoEventAddress;
 use libc::{
     tcsetattr, termios, MAP_NORESERVE, MAP_PRIVATE, MAP_SHARED, O_TMPFILE, PROT_READ, PROT_WRITE,
@@ -1356,8 +1358,9 @@ impl DeviceManager {
 
     pub fn create_interrupt_controller(
         &mut self,
+        hypervisor: Arc<dyn Hypervisor>,
     ) -> DeviceManagerResult<Arc<Mutex<dyn InterruptController>>> {
-        self.add_interrupt_controller()
+        self.add_interrupt_controller(hypervisor)
     }
 
     pub fn create_devices(
@@ -1606,12 +1609,14 @@ impl DeviceManager {
     #[cfg(target_arch = "aarch64")]
     fn add_interrupt_controller(
         &mut self,
+        hypervisor: Arc<dyn Hypervisor>,
     ) -> DeviceManagerResult<Arc<Mutex<dyn InterruptController>>> {
         let interrupt_controller: Arc<Mutex<gic::Gic>> = Arc::new(Mutex::new(
             gic::Gic::new(
                 self.config.lock().unwrap().cpus.boot_vcpus,
                 Arc::clone(&self.msi_interrupt_manager),
                 self.address_manager.vm.clone(),
+                hypervisor.clone(),
             )
             .map_err(DeviceManagerError::CreateInterruptController)?,
         ));
