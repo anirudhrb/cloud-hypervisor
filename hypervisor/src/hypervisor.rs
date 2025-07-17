@@ -186,7 +186,7 @@ pub trait Hypervisor: Send + Sync {
     }
 
     #[cfg(target_arch = "aarch64")]
-    fn vgic_addr_configuration_supported(&self) -> bool {
+    fn vmm_can_set_vgic_locations(&self) -> bool {
         true
     }
 }

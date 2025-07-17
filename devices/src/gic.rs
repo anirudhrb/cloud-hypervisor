@@ -126,14 +126,12 @@ impl Gic {
     }
 
     pub fn create_vgic_config(vcpu_count: u64, hypervisor: Arc<dyn hypervisor::Hypervisor>) -> VgicConfig {
-        if hypervisor.vgic_addr_configuration_supported() {
-            Gic::create_default_config(vcpu_count)
-        } else {
-            // assert!(matches!(hypervisor.hypervisor_type(), hypervisor::HypervisorType::Mshv));
+        if !hypervisor.vmm_can_set_vgic_locations() {
+            assert!(matches!(hypervisor.hypervisor_type(), hypervisor::HypervisorType::Mshv));
             // Some versions of MSHV don't support custom GIC addresses. So, use the
             // GIC addresses defined by the hypervisor.
             let redists_size = layout::GIC_V3_REDIST_SIZE * vcpu_count;
-            VgicConfig {
+            return VgicConfig {
                 vcpu_count,
                 dist_addr: layout::HV_LEGACY_GICD_START.raw_value(),
                 dist_size: layout::GIC_V3_DIST_SIZE,
@@ -142,8 +140,10 @@ impl Gic {
                 msi_addr: layout::HV_LEGACY_GIC_MSI_ADDR.raw_value(),
                 msi_size: layout::GIC_V3_ITS_SIZE,
                 nr_irqs: layout::IRQ_NUM,
-            }
+            };
         }
+
+        Gic::create_default_config(vcpu_count)
     }
 
     pub fn get_vgic(&mut self) -> Result<Arc<Mutex<dyn Vgic>>> {

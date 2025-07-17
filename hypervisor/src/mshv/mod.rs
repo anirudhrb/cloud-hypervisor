@@ -333,10 +333,12 @@ impl MshvHypervisor {
 
         #[cfg(target_arch = "aarch64")]
         {
+            use crate::Hypervisor;
+
             Ok(Arc::new(MshvVm {
                 fd: vm_fd,
                 dirty_log_slots: Arc::new(RwLock::new(HashMap::new())),
-                uses_legacy_gic: true,
+                use_hyp_fixed_gic: !self.vmm_can_set_vgic_locations(),
             }))
         }
     }
@@ -472,7 +474,7 @@ impl hypervisor::Hypervisor for MshvHypervisor {
     }
 
     #[cfg(target_arch = "aarch64")]
-    fn vgic_addr_configuration_supported(&self) -> bool {
+    fn vmm_can_set_vgic_locations(&self) -> bool {
         // TODO: query VMM capabilities to determine this
         false
     }
@@ -507,6 +509,12 @@ pub struct MshvVcpu {
     ghcb: Option<Ghcb>,
     #[cfg(feature = "sev_snp")]
     host_access_pages: ArcSwap<AtomicBitmap>,
+
+    /// Flag indicating whether the GIC layout fixed by MSHV is used.
+    /// This is needed to support older versions of MSHV in which the
+    /// GIC layout is not configurable by the VMM.
+    #[cfg(target_arch = "aarch64")]
+    use_hyp_fixed_gic: bool,
 }
 
 /// Implementation of Vcpu trait for Microsoft Hypervisor
@@ -1568,16 +1576,20 @@ impl cpu::Vcpu for MshvVcpu {
     ///
     #[cfg(target_arch = "aarch64")]
     fn set_gic_redistributor_addr(&self, gicr_base_addr: u64) -> cpu::Result<()> {
+        if self.use_hyp_fixed_gic {
+            return Ok(());
+        }
+
         debug!(
             "Setting GICR base address to: {:#x}, for vp_index: {:?}",
             gicr_base_addr, self.vp_index
         );
-        // let arr_reg_name_value = [(
-        //     hv_register_name_HV_ARM64_REGISTER_GICR_BASE_GPA,
-        //     gicr_base_addr,
-        // )];
-        // set_registers_64!(self.fd, arr_reg_name_value)
-        //     .map_err(|e| cpu::HypervisorCpuError::SetRegister(e.into()))?;
+        let arr_reg_name_value = [(
+            hv_register_name_HV_ARM64_REGISTER_GICR_BASE_GPA,
+            gicr_base_addr,
+        )];
+        set_registers_64!(self.fd, arr_reg_name_value)
+            .map_err(|e| cpu::HypervisorCpuError::SetRegister(e.into()))?;
 
         Ok(())
     }
@@ -1755,8 +1767,12 @@ pub struct MshvVm {
     sev_snp_enabled: bool,
     #[cfg(feature = "sev_snp")]
     host_access_pages: ArcSwap<AtomicBitmap>,
+
+    /// Flag indicating whether the GIC layout fixed by MSHV is used.
+    /// This is needed to support older versions of MSHV in which the
+    /// GIC layout is not configurable by the VMM.
     #[cfg(target_arch = "aarch64")]
-    uses_legacy_gic: bool,
+    use_hyp_fixed_gic: bool,
 }
 
 impl MshvVm {
@@ -1889,6 +1905,8 @@ impl vm::Vm for MshvVm {
             ghcb,
             #[cfg(feature = "sev_snp")]
             host_access_pages: ArcSwap::new(self.host_access_pages.load().clone()),
+            #[cfg(target_arch = "aarch64")]
+            use_hyp_fixed_gic: self.use_hyp_fixed_gic,
         };
         Ok(Arc::new(vcpu))
     }
@@ -2252,7 +2270,7 @@ impl vm::Vm for MshvVm {
         let gic_device = MshvGicV2M::new(self, config)
             .map_err(|e| vm::HypervisorVmError::CreateVgic(anyhow!("Vgic error {:?}", e)))?;
 
-        if self.uses_legacy_gic {
+        if self.use_hyp_fixed_gic {
             return Ok(Arc::new(Mutex::new(gic_device)));
         }
 
@@ -2384,44 +2402,44 @@ impl vm::Vm for MshvVm {
     }
 
     fn init(&self) -> vm::Result<()> {
-        // #[cfg(target_arch = "aarch64")]
-        // {
-        //     self.fd
-        //         .set_partition_property(
-        //             hv_partition_property_code_HV_PARTITION_PROPERTY_GIC_LPI_INT_ID_BITS,
-        //             0,
-        //         )
-        //         .map_err(|e| {
-        //             vm::HypervisorVmError::InitializeVm(anyhow!(
-        //                 "Failed to set GIC LPI support: {}",
-        //                 e
-        //             ))
-        //         })?;
+        #[cfg(target_arch = "aarch64")]
+        if !self.use_hyp_fixed_gic {
+            self.fd
+                .set_partition_property(
+                    hv_partition_property_code_HV_PARTITION_PROPERTY_GIC_LPI_INT_ID_BITS,
+                    0,
+                )
+                .map_err(|e| {
+                    vm::HypervisorVmError::InitializeVm(anyhow!(
+                        "Failed to set GIC LPI support: {}",
+                        e
+                    ))
+                })?;
 
-        //     self.fd
-        //         .set_partition_property(
-        //             hv_partition_property_code_HV_PARTITION_PROPERTY_GIC_PPI_OVERFLOW_INTERRUPT_FROM_CNTV,
-        //             (AARCH64_ARCH_TIMER_VIRT_IRQ + AARCH64_MIN_PPI_IRQ) as u64,
-        //         )
-        //         .map_err(|e| {
-        //             vm::HypervisorVmError::InitializeVm(anyhow!(
-        //                 "Failed to set arch timer interrupt ID: {}",
-        //                 e
-        //             ))
-        //         })?;
+            self.fd
+                .set_partition_property(
+                    hv_partition_property_code_HV_PARTITION_PROPERTY_GIC_PPI_OVERFLOW_INTERRUPT_FROM_CNTV,
+                    (AARCH64_ARCH_TIMER_VIRT_IRQ + AARCH64_MIN_PPI_IRQ) as u64,
+                )
+                .map_err(|e| {
+                    vm::HypervisorVmError::InitializeVm(anyhow!(
+                        "Failed to set arch timer interrupt ID: {}",
+                        e
+                    ))
+                })?;
 
-        //     self.fd
-        //         .set_partition_property(
-        //             hv_partition_property_code_HV_PARTITION_PROPERTY_GIC_PPI_PERFORMANCE_MONITORS_INTERRUPT,
-        //             (AARCH64_PMU_IRQ + AARCH64_MIN_PPI_IRQ) as u64,
-        //         )
-        //         .map_err(|e| {
-        //             vm::HypervisorVmError::InitializeVm(anyhow!(
-        //                 "Failed to set PMU interrupt ID: {}",
-        //                 e
-        //             ))
-        //         })?;
-        // }
+            self.fd
+                .set_partition_property(
+                    hv_partition_property_code_HV_PARTITION_PROPERTY_GIC_PPI_PERFORMANCE_MONITORS_INTERRUPT,
+                    (AARCH64_PMU_IRQ + AARCH64_MIN_PPI_IRQ) as u64,
+                )
+                .map_err(|e| {
+                    vm::HypervisorVmError::InitializeVm(anyhow!(
+                        "Failed to set PMU interrupt ID: {}",
+                        e
+                    ))
+                })?;
+        }
 
         self.fd
             .initialize()
