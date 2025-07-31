@@ -75,9 +75,15 @@ if [ "${TEST_ARCH}" == "aarch64" ]; then
         mkdir -p "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_ROOT_DIR"
     fi
     # Mount the 'raw' image, replace the fio and umount the working folder
-    guestmount -a "$WORKLOADS_DIR/$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_NAME" -m /dev/sda1 "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_ROOT_DIR" || exit 1
+    # guestmount -a "$WORKLOADS_DIR/$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_NAME" -m /dev/sda1 "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_ROOT_DIR" || exit 1
     cp "$WORKLOADS_DIR"/fio "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_ROOT_DIR"/usr/bin/fio
-    guestunmount "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_ROOT_DIR"
+    IMG="$WORKLOADS_DIR/$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_NAME"
+    SECTOR_SIZE=$(fdisk -l "$IMG" | awk '/Sector size/ {print $4; exit}')
+    START_SECTOR=$(fdisk -l "$IMG" | awk '$0 ~ /^'"$IMG"'1/ {print $2; exit}')
+    OFFSET=$((START_SECTOR * SECTOR_SIZE))
+    sudo mount -o loop,offset="$OFFSET" "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_NAME" "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_ROOT_DIR"
+    # guestunmount "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_ROOT_DIR"
+    sudo umount "$FOCAL_OS_RAW_IMAGE_UPDATE_TOOL_ROOT_DIR"
 fi
 
 # Prepare linux image (build from source or download pre-built)
