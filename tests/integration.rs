@@ -71,7 +71,7 @@ mod aarch64 {
 use aarch64::*;
 
 const DIRECT_KERNEL_BOOT_CMDLINE: &str =
-    "root=/dev/vda1 console=ttyAMA0 rw loglevel=8 systemd.journald.forward_to_console=1 irqchip.gicv3_nolpi=1";
+    "root=/dev/vda1 console=hvc0 rw loglevel=8 systemd.journald.forward_to_console=1 irqchip.gicv3_nolpi=1";
 
 const CONSOLE_TEST_STRING: &str = "Started OpenBSD Secure Shell server";
 
