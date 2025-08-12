@@ -280,6 +280,21 @@ struct GicD {
 #[allow(dead_code)]
 #[repr(C, packed)]
 #[derive(IntoBytes, Immutable, FromBytes)]
+struct GicMsiFrame {
+    pub r#type: u8,
+    pub length: u8,
+    pub reserved0: u16,
+    pub msi_frame_id: u32,
+    pub base_address: u64,
+    pub flags: u32,
+    pub spi_count: u16,
+    pub spi_base: u16,
+}
+
+#[cfg(target_arch = "aarch64")]
+#[allow(dead_code)]
+#[repr(C, packed)]
+#[derive(IntoBytes, Immutable, FromBytes)]
 struct GicR {
     pub r#type: u8,
     pub length: u8,
@@ -1485,6 +1500,8 @@ impl CpuManager {
              */
 
             // See section 5.2.12.14 GIC CPU Interface (GICC) Structure in ACPI spec.
+
+            use arch::layout::{SPI_BASE, SPI_NUM};
             for cpu in 0..self.config.boot_vcpus {
                 let vcpu = &self.vcpus[cpu as usize];
                 let mpidr = vcpu.lock().unwrap().get_mpidr();
@@ -1520,7 +1537,7 @@ impl CpuManager {
 
                 madt.append(gicc);
             }
-            let vgic_config = Gic::create_default_config(self.config.boot_vcpus.into());
+            let vgic_config = Gic::create_vgic_config(self.config.boot_vcpus.into(), self.hypervisor.clone());
 
             // GIC Distributor structure. See section 5.2.12.15 in ACPI spec.
             let gicd = GicD {
@@ -1545,16 +1562,28 @@ impl CpuManager {
             };
             madt.append(gicr);
 
-            // See 5.2.12.18 GIC Interrupt Translation Service (ITS) Structure in ACPI spec.
-            let gicits = GicIts {
-                r#type: acpi::ACPI_APIC_GENERIC_TRANSLATOR,
-                length: 20,
+            let gic_msi_frame = GicMsiFrame {
+                r#type: acpi::ACPI_APIC_GIC_MSI_FRAME,
+                length: 24,
                 reserved0: 0,
-                translation_id: 0,
+                msi_frame_id: 0,
                 base_address: vgic_config.msi_addr,
-                reserved1: 0,
+                flags: 1,
+                spi_count: SPI_NUM as u16,
+                spi_base: SPI_BASE as u16,
             };
-            madt.append(gicits);
+            madt.append(gic_msi_frame);
+
+            // // See 5.2.12.18 GIC Interrupt Translation Service (ITS) Structure in ACPI spec.
+            // let gicits = GicIts {
+            //     r#type: acpi::ACPI_APIC_GENERIC_TRANSLATOR,
+            //     length: 20,
+            //     reserved0: 0,
+            //     translation_id: 0,
+            //     base_address: vgic_config.msi_addr,
+            //     reserved1: 0,
+            // };
+            // madt.append(gicits);
 
             madt.update_checksum();
         }

@@ -39,6 +39,8 @@ pub const ACPI_APIC_GENERIC_CPU_INTERFACE: u8 = 11;
 #[cfg(target_arch = "aarch64")]
 pub const ACPI_APIC_GENERIC_DISTRIBUTOR: u8 = 12;
 #[cfg(target_arch = "aarch64")]
+pub const ACPI_APIC_GIC_MSI_FRAME: u8 = 13;
+#[cfg(target_arch = "aarch64")]
 pub const ACPI_APIC_GENERIC_REDISTRIBUTOR: u8 = 14;
 #[cfg(target_arch = "aarch64")]
 pub const ACPI_APIC_GENERIC_TRANSLATOR: u8 = 15;
@@ -383,7 +385,7 @@ fn create_slit_table(numa_nodes: &NumaNodes) -> Sdt {
 #[cfg(target_arch = "aarch64")]
 fn create_gtdt_table() -> Sdt {
     const ARCH_TIMER_NS_EL2_IRQ: u32 = 10;
-    const ARCH_TIMER_VIRT_IRQ: u32 = 11;
+    const ARCH_TIMER_VIRT_IRQ: u32 = 4; // TODO: might need to change this for AH25
     const ARCH_TIMER_S_EL1_IRQ: u32 = 13;
     const ARCH_TIMER_NS_EL1_IRQ: u32 = 14;
     const ACPI_GTDT_INTERRUPT_MODE_LEVEL: u32 = 0;
