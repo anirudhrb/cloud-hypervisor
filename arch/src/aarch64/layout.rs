@@ -148,7 +148,7 @@ pub const IRQ_BASE: u32 = 32;
 pub const IRQ_NUM: u32 = 256;
 
 /// Base SPI interrupt number
-pub const SPI_BASE: u32 = 32;
+pub const SPI_BASE: u32 = 64;
 
 /// Total number of SPIs
 pub const SPI_NUM: u32 = 64;
