@@ -5213,7 +5213,7 @@ mod common_parallel {
     }
 
     fn _test_disk_hotplug(landlock_enabled: bool) {
-        let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string());
+        let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_UPDATE_KERNEL_NAME.to_string());
         let guest = Guest::new(Box::new(focal));
 
         #[cfg(target_arch = "x86_64")]
@@ -5272,6 +5272,7 @@ mod common_parallel {
                     .as_str(),
                 ),
             );
+            println!("Add disk command output: {}", String::from_utf8_lossy(&cmd_output));
             assert!(cmd_success);
             assert!(String::from_utf8_lossy(&cmd_output)
                 .contains("{\"id\":\"test0\",\"bdf\":\"0000:00:06.0\"}"));
@@ -5894,7 +5895,7 @@ mod common_parallel {
     }
 
     fn _test_net_hotplug(pci_segment: Option<u16>) {
-        let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string());
+        let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_UPDATE_KERNEL_NAME.to_string());
         let guest = Guest::new(Box::new(focal));
 
         #[cfg(target_arch = "x86_64")]
@@ -10718,7 +10719,7 @@ mod aarch64_acpi {
 
     #[test]
     fn test_simple_launch_acpi() {
-        let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string());
+        let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_UPDATE_KERNEL_NAME.to_string());
 
         vec![Box::new(focal)].drain(..).for_each(|disk_config| {
             let guest = Guest::new(disk_config);
