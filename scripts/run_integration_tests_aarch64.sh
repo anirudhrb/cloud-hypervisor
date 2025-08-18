@@ -137,13 +137,16 @@ update_workloads() {
     mkdir -p "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
     # Mount the 'raw' image, replace the compressed kernel file and umount the working folder
     # guestmount -a "$WORKLOADS_DIR/$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_NAME" -m /dev/sda1 "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR" || exit 1
+    IMG="$WORKLOADS_DIR/$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_NAME"
     SECTOR_SIZE=$(fdisk -l "$IMG" | awk '/Sector size/ {print $4; exit}')
-    START_SECTOR=$(fdisk -l "$IMG" | awk '$0 ~ /^'"$IMG"'1/ {print $2; exit}')
+    START_SECTOR=$(fdisk -l "$IMG" | awk '$1 == "'"$IMG"'1" {print $2; exit}')
     OFFSET=$((START_SECTOR * SECTOR_SIZE))
-    sudo mount -o loop,offset="$OFFSET" "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_NAME" "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
+    LOOP_DEV=$(sudo losetup -f --show -o "$OFFSET" "$IMG")
+    sudo mount "$LOOP_DEV" "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
     cp "$WORKLOADS_DIR"/Image-arm64.gz "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"/boot/vmlinuz
     # guestunmount "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
     sudo umount "$FOCAL_OS_RAW_IMAGE_UPDATE_KERNEL_ROOT_DIR"
+    sudo losetup -d "$LOOP_DEV"
 
     # Build virtiofsd
     build_virtiofsd
