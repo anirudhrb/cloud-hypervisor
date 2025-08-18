@@ -51,7 +51,7 @@ checkout_repo() {
 build_custom_linux() {
     ARCH=$(uname -m)
     LINUX_CUSTOM_DIR="$WORKLOADS_DIR/linux-custom"
-    LINUX_CUSTOM_BRANCH="msft-uvm-main-6.6"
+    LINUX_CUSTOM_BRANCH="anrayabh/uvm_arm64"
     LINUX_CUSTOM_URL="https://microsoft@dev.azure.com/microsoft/LSG/_git/linux-dom0"
 
     checkout_repo "$LINUX_CUSTOM_DIR" "$LINUX_CUSTOM_URL" "$LINUX_CUSTOM_BRANCH"
