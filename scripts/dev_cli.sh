@@ -444,6 +444,7 @@ cmd_tests() {
             --env RUSTFLAGS="$rustflags" \
             --env TARGET_CC="$target_cc" \
             --env AUTH_DOWNLOAD_TOKEN="$AUTH_DOWNLOAD_TOKEN" \
+            --env ADO_TOKEN="$S_LISA_ms_access_token" \
             --env LLVM_PROFILE_FILE="$LLVM_PROFILE_FILE" \
             "$CTR_IMAGE" \
             dbus-run-session ./scripts/run_integration_tests_"$(uname -m)".sh "$@" || fix_dir_perms $? || exit $?

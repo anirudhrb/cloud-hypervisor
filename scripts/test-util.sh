@@ -16,10 +16,12 @@ checkout_repo() {
     GIT_URL="$2"
     GIT_BRANCH="$3"
     GIT_COMMIT="$4"
-
+    AUTH_TOKEN="$ADO_TOKEN"
     # Check whether the local HEAD commit same as the requested commit or not.
     # If commit is not specified, compare local HEAD and remote HEAD.
     # Remove the folder if there is difference.
+
+
     if [ -d "$SRC_DIR" ]; then
         pushd "$SRC_DIR" || exit
         git fetch
@@ -35,7 +37,7 @@ checkout_repo() {
 
     # Checkout the specified branch and commit (if required)
     if [ ! -d "$SRC_DIR" ]; then
-        git clone --depth 1 "$GIT_URL" -b "$GIT_BRANCH" "$SRC_DIR"
+        git clone -c http.extraheader="AUTHORIZATION: bearer $AUTH_TOKEN" --depth 1 "$GIT_URL" -b "$GIT_BRANCH" "$SRC_DIR"
         if [ "$GIT_COMMIT" ]; then
             pushd "$SRC_DIR" || exit
             git fetch --depth 1 origin "$GIT_COMMIT"
@@ -49,13 +51,13 @@ checkout_repo() {
 build_custom_linux() {
     ARCH=$(uname -m)
     LINUX_CUSTOM_DIR="$WORKLOADS_DIR/linux-custom"
-    LINUX_CUSTOM_BRANCH="ch-6.12.8"
-    LINUX_CUSTOM_URL="https://github.com/cloud-hypervisor/linux.git"
+    LINUX_CUSTOM_BRANCH="msft-uvm-main-6.6"
+    LINUX_CUSTOM_URL="https://microsoft@dev.azure.com/microsoft/LSG/_git/linux-dom0"
 
     checkout_repo "$LINUX_CUSTOM_DIR" "$LINUX_CUSTOM_URL" "$LINUX_CUSTOM_BRANCH"
 
     pushd "$LINUX_CUSTOM_DIR" || exit
-    make ch_defconfig
+    make uvm_defconfig
     make -j "$(nproc)"
     if [ "${ARCH}" == "x86_64" ]; then
         cp vmlinux "$WORKLOADS_DIR/vmlinux-x86_64" || exit 1
@@ -159,15 +161,16 @@ download_linux() {
 }
 
 prepare_linux() {
-    if [ "$build_kernel" = true ]; then
-        echo "Building kernel from source"
-        build_custom_linux
-        echo "Using kernel built from source"
-    else
-        echo "Downloading pre-built kernel from GitHub"
-        download_linux
-        echo "Using kernel downloaded from GitHub"
-    fi
+    build_custom_linux
+    # if [ "$build_kernel" = true ]; then
+    #     echo "Building kernel from source"
+    #     build_custom_linux
+    #     echo "Using kernel built from source"
+    # else
+    #     echo "Downloading pre-built kernel from GitHub"
+    #     download_linux
+    #     echo "Using kernel downloaded from GitHub"
+    # fi
 }
 
 download_ovmf() {
