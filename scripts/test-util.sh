@@ -37,7 +37,7 @@ checkout_repo() {
 
     # Checkout the specified branch and commit (if required)
     if [ ! -d "$SRC_DIR" ]; then
-        git clone -c http.extraheader="AUTHORIZATION: bearer $AUTH_TOKEN" --depth 1 "$GIT_URL" -b "$GIT_BRANCH" "$SRC_DIR"
+        git clone --depth 1 "$GIT_URL" -b "$GIT_BRANCH" "$SRC_DIR"
         if [ "$GIT_COMMIT" ]; then
             pushd "$SRC_DIR" || exit
             git fetch --depth 1 origin "$GIT_COMMIT"
@@ -51,13 +51,13 @@ checkout_repo() {
 build_custom_linux() {
     ARCH=$(uname -m)
     LINUX_CUSTOM_DIR="$WORKLOADS_DIR/linux-custom"
-    LINUX_CUSTOM_BRANCH="anrayabh/uvm_arm64"
-    LINUX_CUSTOM_URL="https://microsoft@dev.azure.com/microsoft/LSG/_git/linux-dom0"
+    LINUX_CUSTOM_BRANCH="force_gicv3_nolpi"
+    LINUX_CUSTOM_URL="https://github.com/anirudhrb/linux"
 
     checkout_repo "$LINUX_CUSTOM_DIR" "$LINUX_CUSTOM_URL" "$LINUX_CUSTOM_BRANCH"
 
     pushd "$LINUX_CUSTOM_DIR" || exit
-    make uvm_defconfig
+    make ch_defconfig
     make -j "$(nproc)"
     if [ "${ARCH}" == "x86_64" ]; then
         cp vmlinux "$WORKLOADS_DIR/vmlinux-x86_64" || exit 1
