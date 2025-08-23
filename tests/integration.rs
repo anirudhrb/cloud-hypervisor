@@ -1321,10 +1321,12 @@ fn test_vhost_user_net(
         // Since virtio-net has 2 queue pairs, its vectors is as follows:
         // 1 virtio-net     with 5 vectors: config, Rx (2), Tx (2)
         // Based on the above, the total vectors should 14.
-        #[cfg(target_arch = "x86_64")]
-        let grep_cmd = "grep -c PCI-MSI /proc/interrupts";
-        #[cfg(target_arch = "aarch64")]
-        let grep_cmd = "grep -c ITS-PCI-MSIX /proc/interrupts";
+        let grep_cmd = if cfg!(target_arch = "x86_64") || cfg!(feature = "mshv") {
+            "grep -c PCI-MSI /proc/interrupts"
+        } else {
+            "grep -c ITS-PCI-MSIX /proc/interrupts"
+        };
+
         assert_eq!(
             guest
                 .ssh_command(grep_cmd)
@@ -2875,10 +2877,11 @@ mod common_parallel {
 
         guest.wait_vm_boot(None).unwrap();
 
-        #[cfg(target_arch = "x86_64")]
-        let grep_cmd = "grep -c PCI-MSI /proc/interrupts";
-        #[cfg(target_arch = "aarch64")]
-        let grep_cmd = "grep -c ITS-PCI-MSIX /proc/interrupts";
+        let grep_cmd = if cfg!(target_arch = "x86_64") || cfg!(feature = "mshv") {
+            "grep -c PCI-MSI /proc/interrupts"
+        } else {
+            "grep -c ITS-PCI-MSIX /proc/interrupts"
+        };
 
         let r = std::panic::catch_unwind(|| {
             assert_eq!(
