@@ -1856,7 +1856,12 @@ fn get_fd_count(pid: u32) -> usize {
 }
 
 fn _test_virtio_vsock(hotplug: bool) {
-    let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string());
+    let focal = if hotplug && cfg!(target_arch = "aarch64") && cfg!(feature = "mshv") {
+        UbuntuDiskConfig::new(FOCAL_IMAGE_UPDATE_KERNEL_NAME.to_string())
+    } else {
+        UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string())
+    };
+
     let guest = Guest::new(Box::new(focal));
 
     #[cfg(target_arch = "x86_64")]
