@@ -3483,7 +3483,18 @@ mod common_parallel {
 
     #[test]
     fn test_virtio_block_direct_and_firmware() {
-        let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string());
+        let focal = if cfg!(target_arch = "aarch64") && cfg!(feature = "mshv") {
+            UbuntuDiskConfig::new(FOCAL_IMAGE_UPDATE_KERNEL_NAME.to_string())
+        } else {
+            UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string())
+        };
+
+        let fw_type = if cfg!(target_arch = "aarch64") && cfg!(feature = "mshv") {
+            FwType::Ovmf
+        } else {
+            FwType::RustHypervisorFirmware
+        };
+
         let guest = Guest::new(Box::new(focal));
 
         // The OS disk must be copied to a location that is not backed by
@@ -3503,7 +3514,7 @@ mod common_parallel {
         let mut child = GuestCommand::new(&guest)
             .args(["--cpus", "boot=1"])
             .args(["--memory", "size=512M"])
-            .args(["--kernel", fw_path(FwType::RustHypervisorFirmware).as_str()])
+            .args(["--kernel", fw_path(fw_type).as_str()])
             .args([
                 "--disk",
                 format!("path={},direct=on", os_path.as_path().to_str().unwrap()).as_str(),
@@ -4715,7 +4726,12 @@ mod common_parallel {
     // properly probed first, then removing it, and adding it again by doing a
     // rescan.
     fn test_pci_bar_reprogramming() {
-        let focal = UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string());
+        let focal = if cfg!(target_arch = "aarch64") && cfg!(feature = "mshv") {
+            UbuntuDiskConfig::new(FOCAL_IMAGE_UPDATE_KERNEL_NAME.to_string())
+        } else {
+            UbuntuDiskConfig::new(FOCAL_IMAGE_NAME.to_string())
+        };
+
         let guest = Guest::new(Box::new(focal));
 
         #[cfg(target_arch = "x86_64")]
