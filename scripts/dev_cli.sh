@@ -4,6 +4,8 @@
 # Copyright © 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+echo "hello, world!"
+
 CLI_NAME="Cloud Hypervisor"
 
 CTR_IMAGE_TAG="ghcr.io/cloud-hypervisor/cloud-hypervisor"
