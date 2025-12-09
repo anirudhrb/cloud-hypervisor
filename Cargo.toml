@@ -120,3 +120,8 @@ unnecessary_semicolon = "deny"
 [workspace.lints.rust]
 # `level = warn` is irrelevant here but mandatory for rustc/cargo
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(devcli_testenv)'] }
+
+[patch.crates-io]
+mshv-ioctls = { git="https://github.com/rust-vmm/mshv", branch="main" }
+mshv-bindings = { git="https://github.com/rust-vmm/mshv", branch="main" }
+
