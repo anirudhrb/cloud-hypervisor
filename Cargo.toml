@@ -122,6 +122,6 @@ unnecessary_semicolon = "deny"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(devcli_testenv)'] }
 
 [patch.crates-io]
-mshv-ioctls = { git="https://github.com/rust-vmm/mshv", branch="main" }
-mshv-bindings = { git="https://github.com/rust-vmm/mshv", branch="main" }
+mshv-ioctls = { git="https://github.com/anirudhrb/rust-vmm-mshv", branch="more_arm64_proc_features" }
+mshv-bindings = { git="https://github.com/anirudhrb/rust-vmm-mshv", branch="more_arm64_proc_features" }
 
