@@ -60,12 +60,11 @@ use x86_64::*;
 #[cfg(target_arch = "aarch64")]
 mod aarch64 {
     pub const FOCAL_IMAGE_NAME: &str = "focal-server-cloudimg-arm64-custom-20210929-0.raw";
-    pub const JAMMY_IMAGE_NAME: &str = "focal-server-cloudimg-arm64-custom-20210929-0.raw";
     pub const FOCAL_IMAGE_UPDATE_KERNEL_NAME: &str =
         "focal-server-cloudimg-arm64-custom-20210929-0-update-kernel.raw";
     pub const FOCAL_IMAGE_NAME_VHD: &str = "focal-server-cloudimg-arm64-custom-20210929-0.vhd";
     pub const FOCAL_IMAGE_NAME_VHDX: &str = "focal-server-cloudimg-arm64-custom-20210929-0.vhdx";
-    // pub const JAMMY_IMAGE_NAME: &str = "jammy-server-cloudimg-arm64-custom-20220329-0.raw";
+    pub const JAMMY_IMAGE_NAME: &str = "jammy-server-cloudimg-arm64-custom-20220329-0.raw";
     pub const JAMMY_IMAGE_NAME_QCOW2: &str = "jammy-server-cloudimg-arm64-custom-20220329-0.qcow2";
     pub const JAMMY_IMAGE_NAME_QCOW2_ZLIB: &str =
         "jammy-server-cloudimg-arm64-custom-20220329-0-zlib.qcow2";
