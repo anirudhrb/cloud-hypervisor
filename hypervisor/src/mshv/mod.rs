@@ -286,7 +286,7 @@ impl hypervisor::Hypervisor for MshvHypervisor {
                 VmType::Normal
             };
         }
-        let mut create_args = make_default_partition_create_arg(mshv_vm_type);
+        let mut create_args = self.mshv.make_default_partition_create_arg(mshv_vm_type);
         let mut disable_proc_features = hv_partition_processor_features::default();
         // SAFETY: Accessing a union element from bindgen generated bindings.
         unsafe {
