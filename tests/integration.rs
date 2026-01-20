@@ -1453,6 +1453,8 @@ fn test_vhost_user_net(
         // Based on the above, the total vectors should 14.
         let grep_cmd = if cfg!(target_arch = "x86_64") || cfg!(feature = "mshv") {
             "grep -c PCI-MSI /proc/interrupts"
+        } else if cfg!(feature = "mshv") {
+            "grep -c GICv2m-PCI-MSIX /proc/interrupts"
         } else {
             "grep -c ITS-PCI-MSIX /proc/interrupts"
         };
@@ -3243,8 +3245,10 @@ mod common_parallel {
             guest.wait_vm_boot(None).unwrap();
         }
 
-        let grep_cmd = if cfg!(target_arch = "x86_64") || cfg!(feature = "mshv") {
+        let grep_cmd = if cfg!(target_arch = "x86_64") {
             "grep -c PCI-MSI /proc/interrupts"
+        } else if cfg!(feature = "mshv") {
+            "grep -c GICv2m-PCI-MSIX /proc/interrupts"
         } else {
             "grep -c ITS-PCI-MSIX /proc/interrupts"
         };
@@ -3558,8 +3562,10 @@ mod common_parallel {
                 assert!(guest.get_total_memory().unwrap_or_default() > 480_000);
             }
 
-            let grep_cmd = if cfg!(target_arch = "x86_64") || cfg!(feature = "mshv") {
+            let grep_cmd = if cfg!(target_arch = "x86_64") {
                 "grep -c PCI-MSI /proc/interrupts"
+            } else if cfg!(feature = "mshv") {
+                "grep -c GICv2m-PCI-MSIX /proc/interrupts"
             } else {
                 "grep -c ITS-PCI-MSIX /proc/interrupts"
             };
