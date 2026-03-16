@@ -127,3 +127,6 @@ unnecessary_semicolon = "deny"
 [workspace.lints.rust]
 # `level = warn` is irrelevant here but mandatory for rustc/cargo
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(devcli_testenv)'] }
+
+[patch.crates-io]
+acpi_tables = { git = "https://github.com/anirudhrb/acpi_tables", branch = "pptt_revision_fix" }
