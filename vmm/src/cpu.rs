@@ -17,8 +17,6 @@ use std::io::Write;
 #[cfg(all(target_arch = "x86_64", feature = "guest_debug"))]
 use std::mem::size_of;
 use std::os::unix::thread::JoinHandleExt;
-#[cfg(target_arch = "aarch64")]
-use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::sync::{Arc, Barrier, Mutex};
 use std::{cmp, io, result, thread};
@@ -29,9 +27,7 @@ use acpi_tables::sdt::Sdt;
 use acpi_tables::{Aml, aml};
 use anyhow::anyhow;
 #[cfg(target_arch = "aarch64")]
-use arch::aarch64::cache::{
-    CacheLevel, get_cache_coherency_line_size, get_cache_number_of_sets, get_cache_size,
-};
+use arch::aarch64::cache::{CacheTopologyInfo, read_cache_topology};
 #[cfg(target_arch = "x86_64")]
 use arch::x86_64::get_x2apic_id;
 use arch::{EntryPoint, NumaNodes};
@@ -1897,51 +1893,25 @@ impl CpuManager {
         let cores_per_package = cores_per_die * dies_per_package;
 
         // Add cache info.
-        // L1 Data Cache Info.
-        let mut l1_d_cache_size: u32 = 0;
-        let mut l1_d_cache_line_size: u32 = 0;
-        let mut l1_d_cache_sets: u32 = 0;
-
-        // L1 Instruction Cache Info.
-        let mut l1_i_cache_size: u32 = 0;
-        let mut l1_i_cache_line_size: u32 = 0;
-        let mut l1_i_cache_sets: u32 = 0;
-
-        // L2 Cache Info.
-        let mut l2_cache_size: u32 = 0;
-        let mut l2_cache_line_size: u32 = 0;
-        let mut l2_cache_sets: u32 = 0;
-
-        // L3 Cache Info.
-        let mut l3_cache_size: u32 = 0;
-        let mut l3_cache_line_size: u32 = 0;
-        let mut l3_cache_sets: u32 = 0;
-
-        let cache_path = Path::new("/sys/devices/system/cpu/cpu0/cache");
-        let cache_exist: bool = cache_path.exists();
-        if cache_exist {
-            // L1 Data Cache Info.
-            l1_d_cache_size = get_cache_size(CacheLevel::L1D);
-            l1_d_cache_line_size = get_cache_coherency_line_size(CacheLevel::L1D);
-            l1_d_cache_sets = get_cache_number_of_sets(CacheLevel::L1D);
-
-            // L1 Instruction Cache Info.
-            l1_i_cache_size = get_cache_size(CacheLevel::L1I);
-            l1_i_cache_line_size = get_cache_coherency_line_size(CacheLevel::L1I);
-            l1_i_cache_sets = get_cache_number_of_sets(CacheLevel::L1I);
-
-            // L2 Cache Info.
-            l2_cache_size = get_cache_size(CacheLevel::L2);
-            l2_cache_line_size = get_cache_coherency_line_size(CacheLevel::L2);
-            l2_cache_sets = get_cache_number_of_sets(CacheLevel::L2);
-
-            // L3 Cache Info.
-            l3_cache_size = get_cache_size(CacheLevel::L3);
-            l3_cache_line_size = get_cache_coherency_line_size(CacheLevel::L3);
-            l3_cache_sets = get_cache_number_of_sets(CacheLevel::L3);
-        } else {
+        let cache_info = read_cache_topology();
+        if cache_info.is_none() {
             warn!("cache sysfs system does not exist.");
         }
+        let CacheTopologyInfo {
+            l1_d_cache_size,
+            l1_d_cache_line_size,
+            l1_d_cache_sets,
+            l1_i_cache_size,
+            l1_i_cache_line_size,
+            l1_i_cache_sets,
+            l2_cache_size,
+            l2_cache_line_size,
+            l2_cache_sets,
+            l3_cache_size,
+            l3_cache_line_size,
+            l3_cache_sets,
+            ..
+        } = cache_info.unwrap_or_default();
 
         let mut pptt = PPTT::new(*b"CLOUDH", *b"CHPPTT  ", 1);
 
