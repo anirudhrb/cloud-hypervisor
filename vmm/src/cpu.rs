@@ -1924,7 +1924,11 @@ impl CpuManager {
             ..
         } = cache_info.unwrap_or_default();
 
-        let mut pptt = PPTT::new(*b"CLOUDH", *b"CHPPTT  ", 1);
+        // Windows guests fault while parsing revision-3 Cache Type
+        // Structures (28 bytes, with a Cache ID field). Emit a
+        // revision-2 PPTT, whose 24-byte Cache Type Structures Windows
+        // can parse, matching what QEMU exposes to Windows guests.
+        let mut pptt = PPTT::new(2, *b"CLOUDH", *b"CHPPTT  ", 1);
 
         let l3_cache_handle = if l3_cache_size != 0 {
             let l3_cache_node = CacheNodeBuilder::default()

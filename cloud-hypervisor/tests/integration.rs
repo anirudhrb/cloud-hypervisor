@@ -10241,7 +10241,7 @@ mod windows {
     }
 
     #[test]
-    fn test_windows_guest() {
+    fn test_windows_guest_basic() {
         let windows_guest = WindowsGuest::new();
 
         let mut child = GuestCommand::new(windows_guest.guest())
